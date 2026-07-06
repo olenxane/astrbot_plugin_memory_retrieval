@@ -1,0 +1,74 @@
+{
+  "embedding_api_base": {
+    "description": "Embedding API Base URL",
+    "type": "string",
+    "hint": "例如 https://api.openai.com/v1",
+    "default": ""
+  },
+  "embedding_api_key": {
+    "description": "API Key",
+    "type": "string",
+    "hint": "Embedding API 的密钥",
+    "default": ""
+  },
+  "embedding_model": {
+    "description": "Embedding Model Name",
+    "type": "string",
+    "hint": "例如 text-embedding-ada-002、text-embedding-v3",
+    "default": ""
+  },
+  "summary_api_base": {
+    "description": "总结模型 API Base URL",
+    "type": "string",
+    "hint": "用于对话总结的 OpenAI 兼容接口，例如 https://api.openai.com/v1",
+    "default": ""
+  },
+  "summary_api_key": {
+    "description": "总结模型 API Key",
+    "type": "string",
+    "hint": "总结模型 API 密钥",
+    "default": ""
+  },
+  "summary_model": {
+    "description": "总结模型名称",
+    "type": "string",
+    "hint": "例如 gpt-4o-mini、qwen-plus；留空则无法使用 /summem",
+    "default": ""
+  },
+  "chunk_size": {
+    "description": "文本分块大小（字符数）",
+    "type": "int",
+    "default": 500,
+    "hint": "每段文本的最大字符数"
+  },
+  "chunk_overlap": {
+    "description": "分块重叠字符数",
+    "type": "int",
+    "default": 50,
+    "hint": "相邻分块之间的重叠字符数"
+  },
+  "top_k": {
+    "description": "检索返回的最大匹配数",
+    "type": "int",
+    "default": 3,
+    "hint": "每次检索返回的最相关文本块数量"
+  },
+  "similarity_threshold": {
+    "description": "相似度阈值",
+    "type": "float",
+    "default": 0.5,
+    "hint": "余弦相似度高于此阈值的文本块才会被返回"
+  },
+  "retrieval_mode": {
+    "description": "RAG 检索触发方式",
+    "type": "string",
+    "hint": "user=仅用户消息自动触发；llm=仅 LLM 工具调用；both=二者均可",
+    "default": "user"
+  },
+  "timeout": {
+    "description": "Embedding API 超时时间（秒）",
+    "type": "int",
+    "default": 60,
+    "hint": "Embedding 请求超时时间"
+  }
+}

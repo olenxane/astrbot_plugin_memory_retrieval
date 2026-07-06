@@ -1,14 +1,31 @@
-# astrbot-plugin-helloworld
+# 记忆检索
 
-AstrBot 插件模板 / A template plugin for AstrBot plugin feature
+#### 项目概述
 
-> [!NOTE]
-> This repo is just a template of [AstrBot](https://github.com/AstrBotDevs/AstrBot) Plugin.
-> 
-> [AstrBot](https://github.com/AstrBotDevs/AstrBot) is an agentic assistant for both personal and group conversations. It can be deployed across dozens of mainstream instant messaging platforms, including QQ, Telegram, Feishu, DingTalk, Slack, LINE, Discord, Matrix, etc. In addition, it provides a reliable and extensible conversational AI infrastructure for individuals, developers, and teams. Whether you need a personal AI companion, an intelligent customer support agent, an automation assistant, or an enterprise knowledge base, AstrBot enables you to quickly build AI applications directly within your existing messaging workflows.
+本插件是一个适用于Astrbot的记忆库插件，本质是一个RAG知识库插件。与内置RAG插件不同的是插件会直接将检索记忆注入上下文，对缓存计费价格低廉的服务提供商灰常友好，可以维持很高的命中缓存率。
 
-# Supports
+### 食用指南
 
-- [AstrBot Repo](https://github.com/AstrBotDevs/AstrBot)
-- [AstrBot Plugin Development Docs (Chinese)](https://docs.astrbot.app/dev/star/plugin-new.html)
-- [AstrBot Plugin Development Docs (English)](https://docs.astrbot.app/en/dev/star/plugin-new.html)
+* 支持通过插件管理页面上传.txt格式的文件，目前仅支持txt
+* 上传后自动读取文本内容，按配置的分块大小与重叠长度进行切分
+* 插件支持三种**访问模式**：
+
+  * disabled：不限制，所有用户可使用 RAG。
+  * whitelist：仅白名单用户可使用。
+  * blacklist：黑名单用户不可使用。
+* 提供 `/summem` 命令，对当前对话历史进行自动总结并加入记忆库，总结内容由大模型生成，需要先配置单独的服务提供商，管理页面可以查看、修改和删除历史总结文件
+
+当系统配置发生变更时，会触发全部文档重建，这可能需要一些时间，需要等待到管理面板提示保存成功
+
+* 初次使用需要进行以下配置：
+
+  * Embedding API：向量嵌入模型相关服务提供商配置，必填
+  * API Base URL：向量嵌入模型相关服务提供商配置，必填
+  * API Key：向量嵌入模型相关服务提供商配置，必填
+  * Embedding 模型名：向量嵌入模型相关服务提供商配置，必填
+  * 超时时间：一般60s没有问题
+  * 分块大小：越大代表每次检索到的信息上下文越长
+  * 分块重叠长度：不同分块间有多少字是重复衔接的
+  * 检索返回数量
+  * 相似度阈值：一般默认值即可，如果发现经常注入一些不相关的内容可以适当调高
+

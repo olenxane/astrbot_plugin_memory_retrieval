@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>memory_retrieval</title>
+<style>
+:root {
+  --green-50: #f0fdf4; --green-100: #dcfce7; --green-200: #bbf7d0;
+  --green-400: #4ade80; --green-500: #22c55e; --green-600: #16a34a;
+  --green-700: #15803d; --green-800: #166534;
+  --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+  --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+  --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+  --white: #ffffff;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --radius: 12px; --radius-sm: 8px; --radius-xs: 6px;
+}
+[data-theme="dark"] {
+  --green-50: #052e16; --green-100: #14532d; --green-200: #166534;
+  --gray-50: #18181b; --gray-100: #27272a; --gray-200: #3f3f46;
+  --gray-300: #52525b; --gray-400: #a1a1aa; --gray-500: #d4d4d8;
+  --gray-600: #e4e4e7; --gray-700: #f4f4f5; --gray-800: #fafafa;
+  --white: #1a1a2e;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--gray-50); color: var(--gray-800); line-height:1.6; padding:24px; max-width:960px; margin:0 auto; }
+h1 { font-size:1.5em; font-weight:700; color:var(--green-700); margin-bottom:8px; }
+h2 { font-size:1.15em; font-weight:600; color:var(--gray-700); margin-bottom:16px; }
+.subtitle { font-size:0.9em; color:var(--gray-500); margin-bottom:28px; }
+.card { background:var(--white); border:1px solid var(--gray-200); border-radius:var(--radius); padding:24px; margin-bottom:20px; box-shadow:var(--shadow-sm); }
+.stats-bar { display:flex; gap:16px; margin-bottom:24px; flex-wrap:wrap; }
+.stat-card { flex:1; min-width:120px; background:var(--green-50); border:1px solid var(--green-200); border-radius:var(--radius-sm); padding:16px; text-align:center; }
+.stat-value { font-size:1.8em; font-weight:700; color:var(--green-700); }
+.stat-label { font-size:0.8em; color:var(--gray-500); margin-top:4px; }
+.form-group { margin-bottom:16px; }
+.form-label { display:block; font-size:0.85em; font-weight:600; color:var(--gray-600); margin-bottom:6px; }
+.form-hint { font-size:0.78em; color:var(--gray-400); margin-top:4px; }
+input[type="text"], input[type="number"], input[type="password"], select, textarea {
+  width:100%; padding:10px 14px; border:1px solid var(--gray-200); border-radius:var(--radius-xs);
+  font-size:0.9em; color:var(--gray-800); background:var(--white); outline:none; transition:border-color 0.2s; font-family:inherit;
+}
+textarea { min-height:100px; resize:vertical; }
+input:focus, select:focus, textarea:focus { border-color:var(--green-500); box-shadow:0 0 0 3px rgba(34,197,94,0.1); }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.btn { display:inline-flex; align-items:center; justify-content:center; padding:10px 20px; border:none; border-radius:var(--radius-xs); font-size:0.9em; font-weight:600; cursor:pointer; transition:background 0.2s, transform 0.1s; }
+.btn:active { transform:scale(0.98); }
+.btn-primary { background:var(--green-600); color:var(--white); }
+.btn-primary:hover { background:var(--green-700); }
+.btn-danger { background:#ef4444; color:var(--white); }
+.btn-danger:hover { background:#dc2626; }
+.btn-outline { background:transparent; color:var(--green-600); border:1px solid var(--green-400); }
+.btn-outline:hover { background:var(--green-50); }
+.btn-sm { padding:6px 12px; font-size:0.8em; }
+.btn-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.upload-zone { border:2px dashed var(--green-400); border-radius:var(--radius); padding:40px 24px; text-align:center; cursor:pointer; transition:background 0.2s, border-color 0.2s; background:var(--green-50); }
+.upload-zone:hover, .upload-zone.drag-over { background:var(--green-100); border-color:var(--green-600); }
+.upload-zone.drag-over { border-style:solid; }
+.upload-text { font-size:0.95em; color:var(--gray-600); margin-bottom:8px; }
+.upload-hint { font-size:0.8em; color:var(--gray-400); }
+.upload-status { margin-top:12px; padding:10px 14px; border-radius:var(--radius-xs); font-size:0.85em; display:none; }
+.upload-status.success { display:block; background:var(--green-100); color:var(--green-700); border:1px solid var(--green-200); }
+.upload-status.error { display:block; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
+[data-theme="dark"] .upload-status.error { background:#450a0a; color:#fca5a5; border-color:#7f1d1d; }
+.doc-list { margin-top:8px; }
+.doc-item { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border:1px solid var(--gray-200); border-radius:var(--radius-sm); margin-bottom:10px; background:var(--gray-50); transition:border-color 0.2s; }
+.doc-item:hover { border-color:var(--green-400); }
+.doc-info { flex:1; }
+.doc-name { font-weight:600; font-size:0.95em; color:var(--gray-700); }
+.doc-meta { font-size:0.78em; color:var(--gray-400); margin-top:4px; }
+.doc-actions { margin-left:12px; }
+.empty-state { text-align:center; padding:32px; color:var(--gray-400); font-size:0.9em; }
+.search-input-wrap { display:flex; gap:10px; }
+.search-input-wrap input { flex:1; }
+.search-results { margin-top:16px; }
+.search-item { padding:12px 14px; border:1px solid var(--gray-200); border-radius:var(--radius-xs); margin-bottom:10px; background:var(--gray-50); }
+.search-item-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.search-item-source { font-size:0.8em; color:var(--green-600); font-weight:600; }
+.search-item-score { font-size:0.78em; color:var(--gray-400); background:var(--green-100); padding:2px 8px; border-radius:10px; }
+.search-item-text { font-size:0.85em; color:var(--gray-600); line-height:1.5; word-break:break-all; }
+.toast-container { position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+.toast { padding:12px 18px; border-radius:var(--radius-xs); font-size:0.85em; color:var(--white); box-shadow:var(--shadow-md); animation:toast-in 0.3s ease; max-width:320px; }
+.toast.success { background:var(--green-600); }
+.toast.error { background:#ef4444; }
+.toast.info { background:#3b82f6; }
+@keyframes toast-in { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+.confirm-backdrop { position:fixed; inset:0; z-index:9998; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(17,24,39,0.45); }
+.confirm-backdrop.open { display:flex; }
+.confirm-dialog { width:min(420px, 100%); background:var(--white); color:var(--gray-800); border:1px solid var(--gray-200); border-radius:var(--radius-sm); box-shadow:var(--shadow-md); padding:18px; }
+.confirm-title { font-size:1em; font-weight:700; color:var(--gray-800); margin-bottom:8px; }
+.confirm-message { font-size:0.88em; color:var(--gray-600); margin-bottom:16px; word-break:break-word; }
+.confirm-actions { display:flex; justify-content:flex-end; gap:10px; }
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid var(--gray-300); border-top-color:var(--green-600); border-radius:50%; animation:spin 0.6s linear infinite; vertical-align:middle; margin-right:6px; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.connection-status { display:inline-block; padding:4px 10px; border-radius:20px; font-size:0.78em; font-weight:600; }
+.connection-status.ok { background:var(--green-100); color:var(--green-700); }
+.connection-status.fail { background:#fef2f2; color:#b91c1c; }
+.connection-status.idle { background:var(--gray-100); color:var(--gray-500); }
+.tag { display:inline-block; padding:2px 8px; border-radius:10px; font-size:0.75em; font-weight:600; }
+.tag-green { background:var(--green-100); color:var(--green-700); }
+.tag-gray { background:var(--gray-100); color:var(--gray-600); }
+.tag-red { background:#fef2f2; color:#b91c1c; }
+[data-theme="dark"] .tag-red { background:#450a0a; color:#fca5a5; }
+.summary-item { border:1px solid var(--gray-200); border-radius:var(--radius-sm); margin-bottom:12px; background:var(--gray-50); overflow:hidden; }
+.summary-header { padding:14px 16px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:background 0.2s; }
+.summary-header:hover { background:var(--green-50); }
+.summary-title { font-weight:600; font-size:0.9em; color:var(--gray-700); }
+.summary-meta { font-size:0.75em; color:var(--gray-400); }
+.summary-preview { font-size:0.8em; color:var(--gray-500); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.summary-body { padding:0 16px 16px; display:none; }
+.summary-body.open { display:block; }
+.summary-body textarea { width:100%; min-height:200px; padding:12px; border:1px solid var(--gray-200); border-radius:var(--radius-xs); font-size:0.85em; font-family:monospace; resize:vertical; background:var(--white); color:var(--gray-800); }
+.summary-body .btn-row { margin-top:10px; }
+.user-doc-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+.user-doc-row input { flex:1; }
+.user-doc-row select { flex:2; }
+.checkbox-group { display:flex; flex-wrap:wrap; gap:8px; }
+.checkbox-item { display:flex; align-items:center; gap:4px; font-size:0.85em; }
+@media (max-width:600px) {
+  body{padding:16px}
+  .form-row{grid-template-columns:1fr}
+  .stats-bar{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="toast-container" id="toastContainer"></div>
+<div class="confirm-backdrop" id="confirmDialog" aria-hidden="true">
+  <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="confirm-title" id="confirmTitle">确认操作</div>
+    <div class="confirm-message" id="confirmMessage"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline btn-sm" id="confirmCancel" type="button">取消</button>
+      <button class="btn btn-danger btn-sm" id="confirmOk" type="button">确认</button>
+    </div>
+  </div>
+</div>
+
+<h1>记忆检索插件控制面板</h1>
+<p class="subtitle">支持历史记忆检索、访问控制和对话自动总结</p>
+
+<!-- Stats -->
+<div class="stats-bar">
+  <div class="stat-card"><div class="stat-value" id="statDocs">0</div><div class="stat-label">文档数</div></div>
+  <div class="stat-card"><div class="stat-value" id="statChunks">0</div><div class="stat-label">分块数</div></div>
+</div>
+
+<!-- Embedding API Configuration -->
+<div class="card">
+  <h2>Embedding API 配置</h2>
+  <div class="form-group">
+    <label class="form-label">API Base URL</label>
+    <input type="text" id="cfgApiBase" placeholder="https://api.openai.com/v1" />
+    <div class="form-hint">兼容 OpenAI 的 /v1 接口地址</div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">API Key</label>
+    <input type="password" id="cfgApiKey" placeholder="sk-..." />
+    <div class="form-hint">不需要密钥时可留空</div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">模型名称</label>
+      <input type="text" id="cfgModel" placeholder="text-embedding-ada-002" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">超时时间（秒）</label>
+      <input type="number" id="cfgTimeout" value="60" min="10" max="300" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">文本分块</label>
+    <div class="form-row">
+      <div><input type="number" id="cfgChunkSize" value="500" min="100" max="2000" /><div class="form-hint">分块大小（字符）</div></div>
+      <div><input type="number" id="cfgOverlap" value="50" min="0" max="500" /><div class="form-hint">重叠长度（字符）</div></div>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">检索参数</label>
+    <div class="form-row">
+      <div><input type="number" id="cfgTopK" value="3" min="1" max="20" /><div class="form-hint">返回结果数量</div></div>
+      <div><input type="number" id="cfgThreshold" value="0.5" min="0" max="1" step="0.05" /><div class="form-hint">相似度阈值</div></div>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">memory_retrieval 检索触发方式</label>
+    <select id="cfgRetrievalMode">
+      <option value="user">仅用户消息自动触发</option>
+      <option value="llm">仅 LLM 工具主动调用</option>
+      <option value="both">用户自动触发 + LLM 工具调用</option>
+    </select>
+    <div class="form-hint">控制插件是在用户消息进入模型前自动注入历史记忆，还是由模型按需调用 memory_search 工具。</div>
+  </div>
+  <hr style="border:none;border-top:1px solid var(--gray-200);margin:16px 0">
+  <h3 style="font-size:1em;margin-bottom:12px;color:var(--gray-700)">总结模型配置</h3>
+  <div class="form-group">
+    <label class="form-label">总结 API Base URL</label>
+    <input type="text" id="cfgSummaryApiBase" placeholder="https://api.openai.com/v1" />
+    <div class="form-hint">用于 /summem 生成对话总结，需兼容 OpenAI Chat Completions。</div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">总结 API Key</label>
+    <input type="password" id="cfgSummaryApiKey" placeholder="sk-..." />
+  </div>
+  <div class="form-group">
+    <label class="form-label">总结模型名称</label>
+    <input type="text" id="cfgSummaryModel" placeholder="gpt-4o-mini / qwen-plus" />
+  </div>
+  <div class="form-group">
+    <label class="checkbox-item"><input type="checkbox" id="cfgForceRebuild" checked /> 保存配置时重建现有文档分块</label>
+    <div class="form-hint">修改分块大小或重叠长度后建议保持勾选；重建会重新调用 Embedding API。</div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" id="btnSaveConfig">保存配置</button>
+    <button class="btn btn-outline" id="btnTestConn">测试连接</button>
+    <span class="connection-status idle" id="connStatus">未测试</span>
+  </div>
+</div>
+
+<!-- Access Control -->
+<div class="card">
+  <h2>访问控制</h2>
+  <div class="form-group">
+    <label class="form-label">访问模式</label>
+    <select id="acMode">
+      <option value="disabled">关闭（所有用户都可使用 memory_retrieval）</option>
+      <option value="whitelist">白名单（仅名单内用户可用）</option>
+      <option value="blacklist">黑名单（排除名单内用户）</option>
+    </select>
+  </div>
+  <div class="form-group" id="acListSection" style="display:none">
+    <label class="form-label" id="acListLabel">用户 ID</label>
+    <textarea id="acList" placeholder="每行一个用户 ID"></textarea>
+    <div class="form-hint">每行填写一个用户 ID，aiocqhttp 通常为 QQ 号</div>
+  </div>
+  <button class="btn btn-primary" id="btnSaveAC" style="margin-bottom:20px">保存访问控制</button>
+  <!-- 用户文档分配功能暂时隐藏，后端 access-control 接口保留。 -->
+</div>
+
+<!-- Upload -->
+<div class="card">
+  <h2>上传文档</h2>
+  <div class="upload-zone" id="uploadZone">
+    <div class="upload-text">拖入 .txt 文件，或点击选择文件</div>
+    <div class="upload-hint">当前仅支持 .txt 格式</div>
+    <input type="file" id="fileInput" accept=".txt" style="display:none" />
+  </div>
+  <div class="upload-status" id="uploadStatus"></div>
+</div>
+
+<!-- Document List -->
+<div class="card">
+  <h2>知识库文档</h2>
+  <div class="doc-list" id="docList"><div class="empty-state">暂无已上传文档</div></div>
+</div>
+
+<!-- Search Test -->
+<div class="card">
+  <h2>检索测试</h2>
+  <div class="search-input-wrap">
+    <input type="text" id="searchQuery" placeholder="输入查询内容以测试检索效果..." />
+    <button class="btn btn-outline" id="btnSearch">搜索</button>
+  </div>
+  <div class="search-results" id="searchResults"></div>
+</div>
+
+<!-- Conversation Summaries -->
+<div class="card">
+  <h2>对话总结</h2>
+  <div class="form-hint" style="margin-bottom:12px">在聊天中使用 <code>/summem</code> 自动总结当前对话历史。生成的总结会保存在这里以供查看和编辑。</div>
+  <div id="summaryList"><div class="empty-state">暂无总结</div></div>
+</div>
+
+<script src="/api/plugin/page/bridge-sdk.js"></script>
+<script>
+var bridge = window.AstrBotPluginPage;
+
+function toast(msg, type) {
+  type = type || "info";
+  var c = document.getElementById("toastContainer");
+  var el = document.createElement("div");
+  el.className = "toast " + type;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 3000);
+}
+function formatDate(ts) {
+  if (!ts) return "";
+  return new Date(ts * 1000).toLocaleDateString() + " " + new Date(ts * 1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+}
+function escHtml(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+function errMsg(e) { return e && e.message ? e.message : String(e || "未知错误"); }
+function confirmAction(message) {
+  return new Promise(function(resolve) {
+    var dialog = document.getElementById("confirmDialog");
+    var msg = document.getElementById("confirmMessage");
+    var ok = document.getElementById("confirmOk");
+    var cancel = document.getElementById("confirmCancel");
+    var done = function(value) {
+      dialog.classList.remove("open");
+      dialog.setAttribute("aria-hidden", "true");
+      ok.removeEventListener("click", onOk);
+      cancel.removeEventListener("click", onCancel);
+      dialog.removeEventListener("click", onBackdrop);
+      document.removeEventListener("keydown", onKeydown);
+      resolve(value);
+    };
+    var onOk = function() { done(true); };
+    var onCancel = function() { done(false); };
+    var onBackdrop = function(e) { if (e.target === dialog) done(false); };
+    var onKeydown = function(e) { if (e.key === "Escape") done(false); };
+    msg.textContent = message;
+    dialog.classList.add("open");
+    dialog.setAttribute("aria-hidden", "false");
+    ok.addEventListener("click", onOk);
+    cancel.addEventListener("click", onCancel);
+    dialog.addEventListener("click", onBackdrop);
+    document.addEventListener("keydown", onKeydown);
+    cancel.focus();
+  });
+}
+function unwrapApiResult(result) {
+  if (result && result.status === "error") {
+    throw new Error(result.message || "请求失败");
+  }
+  if (result && result.status === "ok" && Object.prototype.hasOwnProperty.call(result, "data")) {
+    return result.data;
+  }
+  return result || {};
+}
+async function apiGet(endpoint, params) {
+  return unwrapApiResult(await bridge.apiGet(endpoint, params || {}));
+}
+async function apiPost(endpoint, body) {
+  return unwrapApiResult(await bridge.apiPost(endpoint, body || {}));
+}
+function arrayBufferToBase64(buffer) {
+  var bytes = new Uint8Array(buffer);
+  var binary = "";
+  var chunkSize = 0x8000;
+  for (var i = 0; i < bytes.length; i += chunkSize) {
+    var chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+  return btoa(binary);
+}
+
+// ─── Stats & Config ─────────────────────────────────────
+async function loadStats() {
+  try {
+    var data = await apiGet("stats");
+    document.getElementById("statDocs").textContent = data.total_documents || 0;
+    document.getElementById("statChunks").textContent = data.total_chunks || 0;
+    renderDocList(data.documents || []);
+  } catch (e) { console.error("loadStats", e); }
+}
+async function loadConfig() {
+  try {
+    var d = await apiGet("config");
+    document.getElementById("cfgApiBase").value = d.embedding_api_base || "";
+    document.getElementById("cfgApiKey").value = d.embedding_api_key || "";
+    document.getElementById("cfgModel").value = d.embedding_model || "";
+    document.getElementById("cfgTimeout").value = d.timeout || 60;
+    document.getElementById("cfgSummaryApiBase").value = d.summary_api_base || "";
+    document.getElementById("cfgSummaryApiKey").value = d.summary_api_key || "";
+    document.getElementById("cfgSummaryModel").value = d.summary_model || "";
+    document.getElementById("cfgChunkSize").value = d.chunk_size || 500;
+    document.getElementById("cfgOverlap").value = d.chunk_overlap || 50;
+    document.getElementById("cfgTopK").value = d.top_k || 3;
+    document.getElementById("cfgThreshold").value = d.similarity_threshold || 0.5;
+    document.getElementById("cfgRetrievalMode").value = d.retrieval_mode || "user";
+  } catch (e) { console.error("loadConfig", e); }
+}
+async function saveConfig() {
+  var p = {
+    embedding_api_base: document.getElementById("cfgApiBase").value.trim(),
+    embedding_api_key: document.getElementById("cfgApiKey").value.trim(),
+    embedding_model: document.getElementById("cfgModel").value.trim(),
+    timeout: parseInt(document.getElementById("cfgTimeout").value) || 60,
+    chunk_size: parseInt(document.getElementById("cfgChunkSize").value) || 500,
+    chunk_overlap: parseInt(document.getElementById("cfgOverlap").value) || 50,
+    top_k: parseInt(document.getElementById("cfgTopK").value) || 3,
+    similarity_threshold: parseFloat(document.getElementById("cfgThreshold").value) || 0.5,
+    retrieval_mode: document.getElementById("cfgRetrievalMode").value || "user",
+    summary_api_base: document.getElementById("cfgSummaryApiBase").value.trim(),
+    summary_api_key: document.getElementById("cfgSummaryApiKey").value.trim(),
+    summary_model: document.getElementById("cfgSummaryModel").value.trim(),
+    force_rebuild: document.getElementById("cfgForceRebuild").checked
+  };
+  try {
+    var result = await apiPost("config/save", p);
+    var rebuilt = result && result.rebuilt_documents ? result.rebuilt_documents : 0;
+    toast(rebuilt ? "配置已保存，已重建 " + rebuilt + " 个文档" : "配置已保存", "success");
+    loadStats();
+    loadAccessControl();
+  }
+  catch (e) { toast("保存失败：" + errMsg(e), "error"); }
+}
+async function testConnection() {
+  var st = document.getElementById("connStatus");
+  st.className = "connection-status idle"; st.textContent = "测试中...";
+  try {
+    var d = await apiPost("test-embedding", {});
+    st.className = "connection-status ok"; st.textContent = "正常（维度：" + d.dimension + "）";
+    toast("Embedding API 连接正常", "success");
+  } catch (e) { st.className = "connection-status fail"; st.textContent = "失败"; toast("连接失败：" + errMsg(e), "error"); }
+}
+
+// ─── Access Control ──────────────────────────────────────
+var acData = {};
+async function loadAccessControl() {
+  try {
+    acData = await apiGet("access-control");
+    document.getElementById("acMode").value = acData.access_mode || "disabled";
+    toggleACList();
+    var list = acData.access_mode === "whitelist" ? (acData.whitelist || []) : (acData.blacklist || []);
+    document.getElementById("acList").value = list.join("\n");
+    // 用户文档分配功能已隐藏，后端逻辑保留。
+  } catch (e) { console.error("loadAC", e); }
+}
+function toggleACList() {
+  var mode = document.getElementById("acMode").value;
+  var sec = document.getElementById("acListSection");
+  var lbl = document.getElementById("acListLabel");
+  if (mode === "disabled") { sec.style.display = "none"; }
+  else {
+    sec.style.display = "block";
+    lbl.textContent = mode === "whitelist" ? "白名单（允许的用户 ID）" : "黑名单（禁止的用户 ID）";
+  }
+}
+document.getElementById("acMode").addEventListener("change", toggleACList);
+
+async function saveAccessControl() {
+  var mode = document.getElementById("acMode").value;
+  var listText = document.getElementById("acList").value.trim();
+  var ids = listText ? listText.split("\n").map(function(s){ return s.trim(); }).filter(function(s){ return s; }) : [];
+  var p = { access_mode: mode, user_docs: acData.user_docs || {} };
+  if (mode === "whitelist") { p.whitelist = ids; p.blacklist = acData.blacklist || []; }
+  else if (mode === "blacklist") { p.blacklist = ids; p.whitelist = acData.whitelist || []; }
+  else { p.whitelist = acData.whitelist || []; p.blacklist = acData.blacklist || []; }
+  try {
+    await apiPost("access-control/save", p);
+    acData.access_mode = mode;
+    acData.whitelist = p.whitelist;
+    acData.blacklist = p.blacklist;
+    toast("访问控制已保存", "success");
+  }
+  catch (e) { toast("保存失败：" + errMsg(e), "error"); }
+}
+document.getElementById("btnSaveAC").addEventListener("click", saveAccessControl);
+
+// ─── User-Document Assignment ────────────────────────────
+function renderUserDocs() {
+  var container = document.getElementById("userDocList");
+  var userDocs = acData.user_docs || {};
+  var docs = acData.available_docs || [];
+  var entries = Object.keys(userDocs);
+  if (!entries.length) { container.innerHTML = '<div class="empty-state">暂无用户分配</div>'; return; }
+  var html = "";
+  entries.forEach(function(uid) {
+    var assigned = userDocs[uid] || [];
+    html += '<div class="user-doc-row" data-uid="' + escHtml(uid) + '">';
+    html += '<input type="text" class="ud-uid" value="' + escHtml(uid) + '" placeholder="用户 ID" />';
+    html += '<select class="ud-docs" multiple style="min-height:60px">';
+    docs.forEach(function(d) {
+      var sel = assigned.indexOf(d.doc_id) >= 0 ? " selected" : "";
+      html += '<option value="' + d.doc_id + '"' + sel + '>' + escHtml(d.filename) + '（' + d.chunk_count + ' 个分块）</option>';
+    });
+    html += '</select>';
+    html += '<button class="btn btn-danger btn-sm btn-rm-ud">移除</button>';
+    html += '</div>';
+  });
+  container.innerHTML = html;
+  container.querySelectorAll(".btn-rm-ud").forEach(function(btn) {
+    btn.addEventListener("click", function() { btn.parentElement.remove(); });
+  });
+}
+
+var btnAddUserDoc = document.getElementById("btnAddUserDoc");
+if (btnAddUserDoc) {
+  btnAddUserDoc.addEventListener("click", function() {
+    var container = document.getElementById("userDocList");
+    if (!container) return;
+    var docs = acData.available_docs || [];
+    var row = document.createElement("div");
+    row.className = "user-doc-row";
+    var html = '<input type="text" class="ud-uid" value="" placeholder="用户 ID" />';
+    html += '<select class="ud-docs" multiple style="min-height:60px">';
+    docs.forEach(function(d) { html += '<option value="' + d.doc_id + '">' + escHtml(d.filename) + '（' + d.chunk_count + ' 个分块）</option>'; });
+    html += '</select>';
+    html += '<button class="btn btn-danger btn-sm btn-rm-ud">移除</button>';
+    row.innerHTML = html;
+    container.appendChild(row);
+    row.querySelector(".btn-rm-ud").addEventListener("click", function() { row.remove(); });
+    var empty = container.querySelector(".empty-state");
+    if (empty) empty.remove();
+  });
+}
+
+var btnSaveUserDocs = document.getElementById("btnSaveUserDocs");
+if (btnSaveUserDocs) {
+  btnSaveUserDocs.addEventListener("click", async function() {
+    var rows = document.querySelectorAll("#userDocList .user-doc-row");
+    var userDocs = {};
+    rows.forEach(function(row) {
+      var uid = row.querySelector(".ud-uid").value.trim();
+      var sel = row.querySelector(".ud-docs");
+      var docIds = [];
+      for (var i = 0; i < sel.options.length; i++) { if (sel.options[i].selected) docIds.push(sel.options[i].value); }
+      if (uid) userDocs[uid] = docIds;
+    });
+    try {
+      await apiPost("access-control/save", { user_docs: userDocs });
+      acData.user_docs = userDocs;
+      toast("用户分配已保存", "success");
+    } catch (e) { toast("保存失败：" + errMsg(e), "error"); }
+  });
+}
+
+// ─── Upload ──────────────────────────────────────────────
+async function uploadFile(file) {
+  var status = document.getElementById("uploadStatus");
+  status.className = "upload-status"; status.style.display = "none";
+  if (!file.name.toLowerCase().endsWith(".txt")) { status.className = "upload-status error"; status.textContent = "仅支持 .txt 文件"; return; }
+  status.className = "upload-status success"; status.textContent = "正在上传 " + file.name + " ...";
+  try {
+    var contentBase64 = arrayBufferToBase64(await file.arrayBuffer());
+    var r = await apiPost("upload", { filename: file.name, content_base64: contentBase64 });
+    status.className = "upload-status success";
+    status.textContent = "已上传：" + r.filename + "（" + r.chunk_count + " 个分块）";
+    toast("文档已上传", "success");
+    loadStats(); loadAccessControl();
+  } catch (e) { status.className = "upload-status error"; status.textContent = "上传失败：" + errMsg(e); toast("上传失败", "error"); }
+}
+async function deleteDoc(docId, filename, btn) {
+  console.info("[memory_retrieval WebUI] delete click", {doc_id: docId, filename: filename});
+  if (!await confirmAction("确认删除 \"" + filename + "\"？")) return;
+  var item = btn ? btn.closest(".doc-item") : null;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "删除中";
+  }
+  try {
+    console.info("[memory_retrieval WebUI] delete request", {endpoint: "delete-document", doc_id: docId});
+    var result = await apiPost("delete-document", {doc_id: docId});
+    console.info("[memory_retrieval WebUI] delete response", result);
+    if (result && Array.isArray(result.documents)) {
+      var stillExists = result.documents.some(function(d) { return String(d.doc_id) === String(docId); });
+      if (stillExists) throw new Error("后端未删除该文档");
+      if (item) item.remove();
+      renderDocList(result.documents);
+      document.getElementById("statDocs").textContent = result.total_documents || 0;
+      document.getElementById("statChunks").textContent = result.total_chunks || 0;
+    } else {
+      if (item) item.remove();
+      await loadStats();
+    }
+    await loadAccessControl();
+    console.info("[memory_retrieval WebUI] delete ui updated", {doc_id: docId});
+    toast("已删除", "success");
+  }
+  catch (e) {
+    console.error("[memory_retrieval WebUI] delete failed", e);
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "删除";
+    }
+    toast("删除失败：" + errMsg(e), "error");
+  }
+}
+function renderDocList(docs) {
+  var c = document.getElementById("docList");
+  if (!docs.length) { c.innerHTML = '<div class="empty-state">暂无已上传文档</div>'; return; }
+  c.innerHTML = docs.map(function(d) {
+    return '<div class="doc-item"><div class="doc-info"><div class="doc-name">' + escHtml(d.filename) + '</div><div class="doc-meta">' + d.chunk_count + ' 个分块' + (d.created_at ? ' - ' + formatDate(d.created_at) : '') + '</div></div><div class="doc-actions"><button class="btn btn-danger btn-sm btn-del-doc" data-doc-id="' + escHtml(d.doc_id) + '" data-filename="' + escHtml(d.filename) + '">删除</button></div></div>';
+  }).join("");
+  c.querySelectorAll(".btn-del-doc").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      deleteDoc(btn.dataset.docId, btn.dataset.filename, btn);
+    });
+  });
+}
+
+// ─── Search ──────────────────────────────────────────────
+async function doSearch() {
+  var q = document.getElementById("searchQuery").value.trim();
+  if (!q) { toast("请输入查询内容", "info"); return; }
+  var c = document.getElementById("searchResults");
+  c.innerHTML = '<div style="padding:16px;text-align:center"><span class="spinner"></span>搜索中...</div>';
+  try {
+    var d = await apiPost("search", {query:q});
+    var r = d.results || [];
+    if (!r.length) { c.innerHTML = '<div class="empty-state">没有匹配结果</div>'; return; }
+    c.innerHTML = r.map(function(x) {
+      return '<div class="search-item"><div class="search-item-header"><span class="search-item-source">' + escHtml(x.filename) + '</span><span class="search-item-score">得分：' + x.score + '</span></div><div class="search-item-text">' + escHtml(x.text) + '</div></div>';
+    }).join("");
+  } catch (e) { c.innerHTML = '<div class="upload-status error" style="display:block">搜索失败：' + escHtml(errMsg(e)) + '</div>'; }
+}
+
+// ─── Summaries ───────────────────────────────────────────
+async function loadSummaries() {
+  try {
+    var d = await apiGet("summaries");
+    var items = d.summaries || [];
+    var c = document.getElementById("summaryList");
+    if (!items.length) { c.innerHTML = '<div class="empty-state">暂无总结。可在聊天中使用 /summem 生成。</div>'; return; }
+    c.innerHTML = items.map(function(s) {
+      return '<div class="summary-item" data-fn="' + escHtml(s.filename) + '">' +
+        '<div class="summary-header">' +
+          '<div><div class="summary-title">' + escHtml(s.filename) + '</div><div class="summary-preview">' + escHtml(s.preview || '') + '</div></div>' +
+          '<div class="summary-meta">' + formatDate(s.modified) + ' (' + Math.round(s.size/1024) + 'KB)</div>' +
+        '</div>' +
+        '<div class="summary-body"><textarea></textarea><div class="btn-row"><button class="btn btn-primary btn-sm btn-save-summary">保存</button><button class="btn btn-danger btn-sm btn-delete-summary">删除</button></div></div>' +
+      '</div>';
+    }).join("");
+    c.querySelectorAll(".summary-header").forEach(function(header) {
+      header.addEventListener("click", function() { toggleSummary(header); });
+    });
+    c.querySelectorAll(".btn-save-summary").forEach(function(btn) {
+      btn.addEventListener("click", function() { saveSummary(btn); });
+    });
+    c.querySelectorAll(".btn-delete-summary").forEach(function(btn) {
+      btn.addEventListener("click", function() { deleteSummary(btn); });
+    });
+  } catch (e) { console.error("loadSummaries", e); }
+}
+
+function toggleSummary(header) {
+  var body = header.parentElement.querySelector(".summary-body");
+  if (body.classList.contains("open")) { body.classList.remove("open"); return; }
+  body.classList.add("open");
+  var fn = header.parentElement.dataset.fn;
+  var ta = body.querySelector("textarea");
+  if (!ta.value) {
+    ta.value = "加载中...";
+    apiGet("summaries/" + encodeURIComponent(fn)).then(function(d) {
+      ta.value = d.content || "";
+    }).catch(function(e) { ta.value = "加载失败：" + errMsg(e); });
+  }
+}
+
+async function saveSummary(btn) {
+  var item = btn.closest(".summary-item");
+  var fn = item.dataset.fn;
+  var content = item.querySelector("textarea").value;
+  try { await apiPost("summaries/" + encodeURIComponent(fn) + "/save", {content: content}); toast("总结已保存", "success"); }
+  catch (e) { toast("保存失败：" + errMsg(e), "error"); }
+}
+
+async function deleteSummary(btn) {
+  var item = btn.closest(".summary-item");
+  var fn = item.dataset.fn;
+  if (!await confirmAction("确认删除 " + fn + "？")) return;
+  try { await apiPost("summaries/" + encodeURIComponent(fn) + "/delete", {}); toast("总结已删除", "success"); loadSummaries(); }
+  catch (e) { toast("删除失败：" + errMsg(e), "error"); }
+}
+
+// ─── Events ──────────────────────────────────────────────
+var zone = document.getElementById("uploadZone");
+var fileInput = document.getElementById("fileInput");
+zone.addEventListener("click", function(){ fileInput.click(); });
+zone.addEventListener("dragover", function(e){ e.preventDefault(); zone.classList.add("drag-over"); });
+zone.addEventListener("dragleave", function(){ zone.classList.remove("drag-over"); });
+zone.addEventListener("drop", function(e){ e.preventDefault(); zone.classList.remove("drag-over"); if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener("change", function(){ if (fileInput.files.length) { uploadFile(fileInput.files[0]); fileInput.value = ""; } });
+document.getElementById("btnSaveConfig").addEventListener("click", saveConfig);
+document.getElementById("btnTestConn").addEventListener("click", testConnection);
+document.getElementById("btnSearch").addEventListener("click", doSearch);
+document.getElementById("searchQuery").addEventListener("keydown", function(e){ if (e.key === "Enter") doSearch(); });
+
+// ─── Init ────────────────────────────────────────────────
+async function init() {
+  if (!bridge || typeof bridge.ready !== "function") {
+    toast("插件页面通信组件加载失败，请刷新页面或重载插件。", "error");
+    return;
+  }
+  await bridge.ready();
+  await Promise.all([loadStats(), loadConfig(), loadAccessControl(), loadSummaries()]);
+}
+init().catch(function(e) {
+  console.error("init", e);
+  toast("页面初始化失败：" + errMsg(e), "error");
+});
+</script>
+</body>
+</html>
