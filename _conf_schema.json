@@ -9,12 +9,12 @@
     "description": "API Key",
     "type": "string",
     "hint": "Embedding API 的密钥",
-    "default": ""
+    "default": "sk-kfcfkxqsvivo50renmingbi"
   },
   "embedding_model": {
     "description": "Embedding Model Name",
     "type": "string",
-    "hint": "例如 text-embedding-ada-002、text-embedding-v3",
+    "hint": "例如 qwen3-Embedding-8B",
     "default": ""
   },
   "summary_api_base": {
@@ -32,7 +32,7 @@
   "summary_model": {
     "description": "总结模型名称",
     "type": "string",
-    "hint": "例如 gpt-4o-mini、qwen-plus；留空则无法使用 /summem",
+    "hint": "例如 deepseek-v4-pro；留空则无法使用 /summem",
     "default": ""
   },
   "chunk_size": {
@@ -57,10 +57,10 @@
     "description": "相似度阈值",
     "type": "float",
     "default": 0.5,
-    "hint": "余弦相似度高于此阈值的文本块才会被返回"
+    "hint": "相似度高于此阈值的文本块才会被返回"
   },
   "retrieval_mode": {
-    "description": "RAG 检索触发方式",
+    "description": "记忆检索触发方式",
     "type": "string",
     "hint": "user=仅用户消息自动触发；llm=仅 LLM 工具调用；both=二者均可",
     "default": "user"
